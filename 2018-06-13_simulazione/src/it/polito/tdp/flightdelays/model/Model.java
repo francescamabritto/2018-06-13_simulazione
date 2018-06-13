@@ -7,6 +7,10 @@ import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 
+import com.javadocmd.simplelatlng.LatLng;
+import com.javadocmd.simplelatlng.LatLngTool;
+import com.javadocmd.simplelatlng.util.LengthUnit;
+
 import it.polito.tdp.flightdelays.db.FlightDelaysDAO;
 
 public class Model {
@@ -17,47 +21,58 @@ public class Model {
 	private List<Flight> flights;
 	private Graph<Airport, DefaultWeightedEdge> grafo;
 	private FlightIdMap flightIdMap;
+	private AirportIdMap airportIdMap;
 	
 	public Model() {
 		this.dao = new FlightDelaysDAO();
 		this.airlines = dao.loadAllAirlines();
-		this.airports = dao.loadAllAirports();
-		this.grafo = new SimpleDirectedWeightedGraph<>(DefaultWeightedEdge.class);
 		this.flightIdMap = new FlightIdMap();
+		this.airportIdMap = new AirportIdMap();
 	}
 	
 	
 	public List<Airline> getAllAirline(){
 		return airlines;
 	}
-	public List<Airport> getAllAirport(){
+	public List<Airport> getAirports(){
 		return airports;
-	}
-	
-	public Airport getAirportFromId(String id) {
-		for(Airport a: this.airports) {
-			if(a.getId().compareTo(id)==0)
-				return a;
-		}
-		return null;
-		
 	}
 	
 	public void creaGrafo(Airline airline) {
 		
-		
+		this.grafo = new SimpleDirectedWeightedGraph<>(DefaultWeightedEdge.class);
+
+		this.airports = dao.loadAllAirportsFromAirline(airline, airportIdMap);
 		Graphs.addAllVertices(grafo, this.airports);
 		
-		this.flights = dao.loadFlightsFromAirline(airline, flightIdMap);
-		
+		this.flights = dao.loadFlightsFromAirline(airline);
 		
 		for(Flight f: flights) {
-			Airport a1 = this.getAirportFromId(f.getOriginAirportId());
-			//System.out.println(a1);
-			Airport a2 = this.getAirportFromId(f.getDestinationAirportId());
-			//System.out.println(a2);
-			grafo.addEdge(a1, a2);
+			Airport a1 = airportIdMap.get(f.getOriginAirportId());
+			Airport a2 = airportIdMap.get(f.getDestinationAirportId());
+			DefaultWeightedEdge edge = grafo.addEdge(a1, a2);
+			if(edge!=null) {
+			LatLng partenza = new LatLng(a1.getLatitude(), a1.getLongitude());
+			LatLng arrivo = new LatLng(a2.getLatitude(), a2.getLongitude());
+			
+			double distanza = LatLngTool.distance(partenza, arrivo, LengthUnit.KILOMETER);
+			double avgRitardo=0;
+			int numFlightPerTratta =0;
+			for(Flight f_delay: this.flights) {
+				if(f_delay.getOriginAirportId().compareTo(a1.getId())==0 &&
+						f_delay.getDestinationAirportId().compareTo(a2.getId())==0) {
+					numFlightPerTratta++;
+					avgRitardo += f_delay.getArrivalDelay();
+				}	
+			}
+			avgRitardo = avgRitardo/numFlightPerTratta;
+			// TODO 
+			double peso = avgRitardo/distanza;
+			
+			grafo.setEdgeWeight(edge, peso);
+			}
 		}
+		
 		
 		System.out.println("vertici = "+ this.grafo.vertexSet().size() +"\narchi = "+this.grafo.edgeSet().size());
 		
