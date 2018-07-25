@@ -80,9 +80,10 @@ public class Airport {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("Airport [name=");
-		builder.append(name);
-		builder.append("]");
+//		builder.append("Airport [name=");
+//		builder.append(name);
+//		builder.append("]");
+		builder.append(id);
 		return builder.toString();
 	}
 

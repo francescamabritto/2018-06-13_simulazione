@@ -8,15 +8,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.javadocmd.simplelatlng.LatLng;
-import com.javadocmd.simplelatlng.LatLngTool;
-import com.javadocmd.simplelatlng.util.LengthUnit;
-
 import it.polito.tdp.flightdelays.model.Airline;
 import it.polito.tdp.flightdelays.model.Airport;
 import it.polito.tdp.flightdelays.model.AirportIdMap;
 import it.polito.tdp.flightdelays.model.Flight;
-import it.polito.tdp.flightdelays.model.FlightIdMap;
 import it.polito.tdp.flightdelays.model.Rotta;
 
 public class FlightDelaysDAO {
@@ -129,24 +124,28 @@ public class FlightDelaysDAO {
 			throw new RuntimeException("Error Connection Database");
 		}
 	}
-	/*
-	public List<Rotta> getAllRotte(){
-		String sql = "";
+	
+	public List<Rotta> getAllRotte(Airline airline, AirportIdMap airportIdMap){
+		String sql = "SELECT origin_airport_id, destination_airport_id, AVG(arrival_delay) as avg "
+				+ "FROM flights WHERE airline = ? "
+				+ "AND origin_airport_id IN (SELECT id FROM airports) "
+				+ "AND destination_airport_id IN (SELECT id FROM airports) "
+				+ "GROUP BY origin_airport_id, destination_airport_id";
 		List<Rotta> result = new LinkedList<Rotta>();
 
 		try {
 			Connection conn = ConnectDB.getConnection();
 			PreparedStatement st = conn.prepareStatement(sql);
-			st.setString();
+			st.setString(1, airline.getId());
 			ResultSet rs = st.executeQuery();
 
 			while (rs.next()) {
+				Rotta r = new Rotta(airportIdMap.get(rs.getString("origin_airport_id")),
+						airportIdMap.get(rs.getString("destination_airport_id")), 
+						rs.getDouble("avg"), airline);
 				
-				
-				Rotta r = new Rotta(rs.getString("airline"),rs.getString("origin_airport_id"), distanza);
 				result.add(r);
 			}
-
 			conn.close();
 			return result;
 
@@ -155,7 +154,7 @@ public class FlightDelaysDAO {
 			System.out.println("Errore connessione al database");
 			throw new RuntimeException("Error Connection Database");
 		}
-	}*/
+	}
 
 	public List<Airport> loadAllAirportsFromAirline(Airline airline, AirportIdMap airportIdMap) {
 		String sql = "SELECT id, airport, city, state, country, latitude, longitude " + 

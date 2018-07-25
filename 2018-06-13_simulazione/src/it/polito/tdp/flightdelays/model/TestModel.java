@@ -10,6 +10,7 @@ public class TestModel {
 		// System.out.println(model.getAllAirport());
 		// System.out.println("ok");
 		model.creaGrafo(airline);
+		System.out.println(model.getFlights());
 	}
 
 }

@@ -5,6 +5,7 @@ import java.util.ResourceBundle;
 
 import it.polito.tdp.flightdelays.model.Airline;
 import it.polito.tdp.flightdelays.model.Model;
+import it.polito.tdp.flightdelays.model.Simulator;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -15,6 +16,7 @@ import javafx.scene.control.TextField;
 public class FlightDelaysController {
 	
 	private Model model;
+	Simulator sim = new Simulator();
 
     @FXML // ResourceBundle that was given to the FXMLLoader
     private ResourceBundle resources;
@@ -42,16 +44,34 @@ public class FlightDelaysController {
 
     @FXML
     void doCaricaVoli(ActionEvent event) {
-    	Airline airline = this.cmbBoxLineaAerea.getValue();
-    	if(airline == null) {
-    		this.txtResult.setText("Selezionare una compagnia aerea!!");
-    		return;
-    	}
+	    	Airline airline = this.cmbBoxLineaAerea.getValue();
+	    	if(airline == null) {
+	    		this.txtResult.setText("Selezionare una compagnia aerea!!");
+	    		return;
+	    	}
+	    	model.creaGrafo(airline);
+	    	this.txtResult.setText("Le 10 rotte peggiori sono:\n"+model.getDieciArchiPeggiori().toString());
     }
 
     @FXML
     void doSimula(ActionEvent event) {
-    	
+    		String passeggeri = this.numeroPasseggeriTxtInput.getText();
+    		String voli = this.numeroVoliTxtInput.getText();
+    		if(passeggeri.isEmpty() || voli.isEmpty()) {
+    			this.txtResult.setText("Inserire un valore sia per i passeggeri che per i voli\n");
+    			return;
+    		}
+    		try {
+    			int numPasseggeri = Integer.parseInt(passeggeri);
+    			int numVoli = Integer.parseInt(voli);
+    			sim.init(numPasseggeri, numVoli, model.getFlights());
+    			this.txtResult.appendText(sim.getRitardoTotPerPasseggero().toString());
+    			
+    		}catch(NumberFormatException nfe) {
+    			nfe.printStackTrace();
+    			this.txtResult.setText("Inserire un valore corretto per i passeggeri o per i voli\n");
+    			return;
+    		}
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
